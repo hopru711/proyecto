@@ -1,0 +1,314 @@
+/*Includes--------------------------------------------------------------------*/
+#include <stdio.h>
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+#define error -1
+#define serie 1
+#define paralelo 2
+#define serie_y_paralelo 3
+#define disp 0
+#define no_disp 1
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+const float valor_comercial[3][13]=
+{
+	{1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.1, 5.6, 6.8, 8.2},
+	{10, 12, 15, 18, 22, 27, 33, 39, 47, 51, 56, 68, 82},
+	{100, 120, 150, 180, 220, 270, 330, 390, 470, 510, 560, 680, 820}
+};
+/* Private function prototypes -----------------------------------------------*/
+int obtener_resistencias_serie(float valor_resistencia);
+int obtener_resistencias_paralelo(float valor_resistencia);
+int obtener_resistencias_serie_mitad(float valor_resistencia);
+float valor_comercial_izq(float valor);
+float valor_comercial_der(float valor);
+float diferencia(float valor_aprox, float valor_orignial);
+int calcular_resistencias_serie_paralelo(float valor_resistencia);
+/**********************************************************************************************************************************************/
+int main(void)
+{
+	float valor_resistencia;
+	int correr_programa=1;
+	char seleccion;
+	int sel_disp=disp;
+	int num_resistencias=0;
+	while(correr_programa)
+	{
+		if( sel_disp==disp)
+		{
+			printf("Inserte 'a' si desea resistencias en serie \n");
+			printf("Inserte 'b' si desea resistencias en paralelo\n");
+			printf("Inserte 'c' si desea la configuración mas optima\n");
+			printf("Inserte 'd' si desea cerrar el programa\n");
+			fflush( stdin );
+			scanf("%c", &seleccion);
+		}
+		switch(seleccion)
+		{
+			case 'a':
+			if(sel_disp==disp)
+			{
+				printf("Inserte el valor de la resistencia sin su prefijo:\n");
+				fflush( stdin );
+				scanf("%f", &valor_resistencia);
+			}
+			obtener_resistencias_serie(valor_resistencia);
+			sel_disp=disp;
+			break;
+			case 'b':
+			if(sel_disp==disp)
+			{
+				printf("Inserte el valor de la resistencia sin su prefijo:\n");
+				fflush( stdin );
+				scanf("%f", &valor_resistencia);
+			}
+			obtener_resistencias_paralelo(valor_resistencia);
+			sel_disp=disp;
+			break; 
+			case 'c':
+			printf("Inserte el valor de la resistencia:\n");
+			fflush( stdin );
+			fflush( stdout );
+			scanf("%f", &valor_resistencia);
+			num_resistencias=calcular_resistencias_serie_paralelo(valor_resistencia);
+			printf("El valor de la resistencia es: %f\n", valor_resistencia);
+			printf("El valor es: %d\n", num_resistencias); 
+			if(num_resistencias==paralelo)
+			{
+				seleccion='b';
+				sel_disp=no_disp;
+			}
+			else if(num_resistencias==serie)
+			{
+				seleccion='a';
+				sel_disp=no_disp;
+			}
+			else if(num_resistencias==serie_y_paralelo)
+			{
+				printf("cualquiera es valida");
+			}
+			break;
+			case 'd':
+			correr_programa=0;
+			break;
+			default:
+			printf("Opcion invalida");
+			break;
+		}
+	}
+	return 0;
+}
+/**********************************************************************************************************************************************/
+int obtener_resistencias_serie(float valor_resistencia)
+{
+	float valor_aprox;
+	float valor_restante;
+	float valor_total;
+	int contador;
+	int camino;
+	camino=obtener_resistencias_serie_mitad(valor_resistencia);
+	if(camino==error)
+	{
+		for(valor_restante = valor_resistencia, contador=0, valor_aprox=0, valor_total=0; valor_restante>0;contador++)
+		{
+			valor_aprox=valor_comercial_izq(valor_restante);
+			if(valor_aprox==error)
+			{
+				valor_aprox=1;
+				//break;
+			}
+			printf("Valor de R%d: %f\n", contador, valor_aprox);
+			valor_restante = valor_restante-valor_aprox;
+			valor_total=valor_aprox + valor_total;
+		}
+		printf("Valor aproximado obtenido: %.2f\n", valor_total);
+	}
+	else
+	{
+		for(contador=0; contador<2; contador++)
+		{
+			printf("Valor de R%d: %f\n", contador, valor_resistencia/2);
+		}
+	}
+	return contador;
+}
+/**********************************************************************************************************************************************/
+int obtener_resistencias_paralelo(float valor_resistencia)
+{
+	int contador;
+	float valor_aprox;
+	float valor_original;
+	float valor_almacenado;
+	int num_resistencias;
+	float valor_total;
+	for(valor_almacenado=valor_resistencia, contador=1, valor_original=valor_almacenado+2; diferencia(valor_aprox, valor_original)>=10 && contador<3 && diferencia(valor_aprox, valor_original)!=0 ; contador++)
+	{
+		valor_almacenado=valor_almacenado*2;
+		valor_original=valor_almacenado;
+		valor_aprox=valor_comercial_der(valor_almacenado);
+		if(valor_aprox==error)
+		{
+			printf("Error\n");
+			return 0;
+		}
+		/*
+		printf("El valor de las %d resistencias en paralelo es: %.2f \n", contador, valor_aprox);
+		printf("La diferencia es: %.2f\n", diferencia(valor_aprox, valor_original));
+		*/
+		valor_almacenado=valor_original;
+	}
+	num_resistencias=(contador-1)*2;
+	printf("El valor de las %d resistencias en paralelo es: %.2f. \n", num_resistencias, valor_aprox);
+	valor_total=1/((1/valor_aprox)*num_resistencias);
+	printf("El valor obtenido con las resistencias en paralelo es de: %.2f.\n", valor_total);
+	return num_resistencias;
+}
+/**********************************************************************************************************************************************/
+float diferencia(float valor_aprox, float valor_original)
+{
+	float dif;
+	dif=valor_aprox-valor_original;
+	return dif;
+}
+/**********************************************************************************************************************************************/
+float valor_comercial_izq(float valor)
+{
+	float valor_aprox;
+	int i, j;
+	for(i=0, valor_aprox=error;i<3; i++)
+		{
+			for(j=0; j < 13; j++)
+			{
+				if(valor_comercial[i][j]<=valor)
+				{
+					valor_aprox=valor_comercial[i][j];
+				}
+				else
+				{
+					return valor_aprox;
+				}
+			}
+		}
+	return valor_aprox;
+}
+/**********************************************************************************************************************************************/
+float valor_comercial_der(float valor)
+{
+	float valor_aprox;
+	int i, j;
+	for(i=2, valor_aprox=error;i>=0; i--)
+		{
+			for(j=12; j >= 0; j--)
+			{
+				if(valor_comercial[i][j]>=valor)
+				{
+					valor_aprox=valor_comercial[i][j];
+				}
+				else
+				{
+					return valor_aprox;
+				}
+			}
+		}
+	return valor_aprox;
+}
+int obtener_resistencias_serie_mitad(float valor_resistencia)
+{
+	float valor= valor_resistencia/2;
+	float valor_comercial;
+	valor_comercial=valor_comercial_izq(valor);
+	if(valor_comercial==valor)
+	{
+		return 0;
+	}
+	else 
+	{
+		return error;
+	}
+}
+/**********************************************************************************************************************************************/
+int calcular_resistencias_serie_paralelo(float valor_resistencia)
+{
+	float valor_aprox;
+	float valor_restante;
+	float valor_total;
+	float valor_almacenado;
+	float valor_original;
+	int contador;
+	int camino;
+	int num_serie;
+	int num_paralelo;
+	int num_resistencias;
+	int num_menor;
+	camino=obtener_resistencias_serie_mitad(valor_resistencia);
+	if(camino==error)
+	{
+		for(valor_restante = valor_resistencia, contador=0, valor_aprox=0, valor_total=0; valor_restante>0;contador++)
+		{
+			valor_aprox=valor_comercial_izq(valor_restante);
+			if(valor_aprox==error)
+			{
+				valor_aprox=1;
+				//break;
+			}
+			valor_restante = valor_restante-valor_aprox;
+			valor_total=valor_aprox + valor_total;
+		}
+	}
+	else
+	{
+		for(contador=0; contador<2; contador++)
+		{
+		}
+	}
+	num_serie=contador;
+	for(valor_almacenado=valor_resistencia, contador=1, valor_original=valor_almacenado+2; diferencia(valor_aprox, valor_original)>=10 && contador<3 && diferencia(valor_aprox, valor_original)!=0 ; contador++)
+	{
+		valor_almacenado=valor_almacenado*2;
+		valor_original=valor_almacenado;
+		valor_aprox=valor_comercial_der(valor_almacenado);
+		if(valor_aprox==error)
+		{
+			printf("Error\n");
+			return 0;
+		}
+		valor_almacenado=valor_original;
+	}
+	num_resistencias=(contador-1)*2;
+	num_paralelo=num_resistencias;
+	if(num_paralelo>num_serie)
+	{
+		num_menor=serie;
+	}
+	else if(num_paralelo==num_serie)
+	{
+		num_menor=serie_y_paralelo;
+
+	}
+	else 
+	{
+		num_menor=paralelo;
+		for(valor_almacenado=valor_resistencia, contador=1, valor_original=valor_almacenado+2; diferencia(valor_aprox, valor_original)>=10 && contador<3 && diferencia(valor_aprox, valor_original)!=0 ; contador++)
+	{
+		valor_almacenado=valor_almacenado*2;
+		valor_original=valor_almacenado;
+		valor_aprox=valor_comercial_der(valor_almacenado);
+		if(valor_aprox==error)
+		{
+			printf("Error\n");
+			return 0;
+		}
+		/*
+		printf("El valor de las %d resistencias en paralelo es: %.2f \n", contador, valor_aprox);
+		printf("La diferencia es: %.2f\n", diferencia(valor_aprox, valor_original));
+		*/
+		valor_almacenado=valor_original;
+	}
+	num_resistencias=(contador-1)*2;
+	printf("El valor de las %d resistencias en paralelo es: %.2f. \n", num_resistencias, valor_aprox);
+	valor_total=1/((1/valor_aprox)*num_resistencias);
+	printf("El valor obtenido con las resistencias en paralelo es de: %.2f.\n", valor_total);
+	}
+	return num_menor;
+}
+/**********************************************************************************************************************************************/
